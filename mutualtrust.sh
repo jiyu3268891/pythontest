@@ -1,18 +1,25 @@
 #!/bin/bash
-cd /home/adaas/.ssh
+#mutual trust
+mkdir -p /home/`whoami`/.ssh
+cd /home/`whoami`/.ssh
+if [ ! -f id_rsa.pub ]
+then
 ssh-keygen -t rsa
-iplist=`cat /apps/adf/tmp/ip.list`
-user=$1
-passwd=$2
-for ip in $iplist
+fi
+#mutual trust ip list
+iplist=`cat /apps/adf/install/ip.list`
+while read -r line
 do
-/usr/bin/expect <<-EOF
-spawn ssh-copy-id -i /home/adaas/.ssh/id_rsa.pub $user@$ip
-expect "*yes";
-send "yes\r";
-expect "password";
-send "$passwd\r";
-interact;
-expect eof
-EOF
-done
+	ip=`echo $line | awk '{print $1}'`
+	user=`echo $line | awk '{print $2}'`
+	passwd=`echo $line | awk '{print $3}'`
+	/usr/bin/expect <<-EOF
+	spawn ssh-copy-id -i /home/$user/.ssh/id_rsa.pub $user@$ip
+	expect "*yes";
+	send "yes\r";
+	expect "password";
+	send "$passwd\r";
+	interact;
+	expect eof
+	EOF
+done < /apps/adf/install/ip.list
